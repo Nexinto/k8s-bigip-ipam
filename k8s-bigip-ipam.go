@@ -5,27 +5,26 @@ import (
 	"flag"
 	"fmt"
 	"os"
-
-	"github.com/Nexinto/k8s-lbutil"
+	"regexp"
+	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 
+	"github.com/Nexinto/k8s-lbutil"
+
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
 
 	ipamv1 "github.com/Nexinto/k8s-ipam/pkg/apis/ipam.nexinto.com/v1"
 	ipamclientset "github.com/Nexinto/k8s-ipam/pkg/client/clientset/versioned"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"regexp"
-	strconv "strconv"
-	"strings"
 )
 
 const (
-
 	// This annotation contains the VIP that is cofigured by the k8s-bigip-ctlr.
 	AnnVirtualServerIP = "virtual-server.f5.com/ip"
 
