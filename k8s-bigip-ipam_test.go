@@ -117,6 +117,30 @@ func (c *Controller) simBigIpCtlr() error {
 	return nil
 }
 
+func (c *Controller) simulate() error {
+
+	// This isn't what it looks like.
+	time.Sleep(2 * time.Second)
+
+	err := c.simIPAM()
+	if err != nil {
+		return err
+	}
+
+	// You don't see this
+	time.Sleep(2 * time.Second)
+
+	err = c.simBigIpCtlr()
+	if err != nil {
+		return err
+	}
+
+	// Not happening
+	time.Sleep(2 * time.Second)
+
+	return nil
+}
+
 func TestDefaultLifecycle(t *testing.T) {
 	c := testEnvironment()
 	a := assert.New(t)
@@ -147,16 +171,14 @@ func TestDefaultLifecycle(t *testing.T) {
 		return
 	}
 
-	// This isn't what it looks like.
-	time.Sleep(2 * time.Second)
-
-	err = c.simIPAM()
-	if !a.Nil(err) {
+	if err := c.simulate(); !a.Nil(err) {
 		return
 	}
 
-	// You don't see this
-	time.Sleep(2 * time.Second)
+	s, err = c.Kubernetes.CoreV1().Services("default").Get("myservice", metav1.GetOptions{})
+	if !a.Nil(err) {
+		return
+	}
 
 	ia, err := c.IpamClient.IpamV1().IpAddresses("default").Get("myservice", metav1.GetOptions{})
 	if !a.Nil(err) {
@@ -165,19 +187,6 @@ func TestDefaultLifecycle(t *testing.T) {
 
 	assigned := ia.Status.Address
 	if !a.NotEmpty(assigned) {
-		return
-	}
-
-	err = c.simBigIpCtlr()
-	if !a.Nil(err) {
-		return
-	}
-
-	// Not happening
-	time.Sleep(2 * time.Second)
-
-	s, err = c.Kubernetes.CoreV1().Services("default").Get("myservice", metav1.GetOptions{})
-	if !a.Nil(err) {
 		return
 	}
 
@@ -238,21 +247,9 @@ func TestRemovePort(t *testing.T) {
 		return
 	}
 
-	time.Sleep(2 * time.Second)
-
-	err = c.simIPAM()
-	if !a.Nil(err) {
+	if err := c.simulate(); !a.Nil(err) {
 		return
 	}
-
-	time.Sleep(2 * time.Second)
-
-	err = c.simBigIpCtlr()
-	if !a.Nil(err) {
-		return
-	}
-
-	time.Sleep(2 * time.Second)
 
 	// Remove port 80
 
@@ -268,7 +265,9 @@ func TestRemovePort(t *testing.T) {
 		return
 	}
 
-	time.Sleep(2 * time.Second)
+	if err := c.simulate(); !a.Nil(err) {
+		return
+	}
 
 	_, err = c.Kubernetes.CoreV1().ConfigMaps("default").Get("bigip-myservice-80", metav1.GetOptions{})
 	a.NotNil(err)
@@ -307,21 +306,9 @@ func TestAddPort(t *testing.T) {
 		return
 	}
 
-	time.Sleep(2 * time.Second)
-
-	err = c.simIPAM()
-	if !a.Nil(err) {
+	if err := c.simulate(); !a.Nil(err) {
 		return
 	}
-
-	time.Sleep(2 * time.Second)
-
-	err = c.simBigIpCtlr()
-	if !a.Nil(err) {
-		return
-	}
-
-	time.Sleep(2 * time.Second)
 
 	// Add port 443
 
@@ -341,7 +328,9 @@ func TestAddPort(t *testing.T) {
 		return
 	}
 
-	time.Sleep(2 * time.Second)
+	if err := c.simulate(); !a.Nil(err) {
+		return
+	}
 
 	cm80, err := c.Kubernetes.CoreV1().ConfigMaps("default").Get("bigip-myservice-80", metav1.GetOptions{})
 	a.Nil(err)
@@ -380,21 +369,9 @@ func TestChangePort(t *testing.T) {
 		return
 	}
 
-	time.Sleep(2 * time.Second)
-
-	err = c.simIPAM()
-	if !a.Nil(err) {
+	if err := c.simulate(); !a.Nil(err) {
 		return
 	}
-
-	time.Sleep(2 * time.Second)
-
-	err = c.simBigIpCtlr()
-	if !a.Nil(err) {
-		return
-	}
-
-	time.Sleep(2 * time.Second)
 
 	// Change port 80 to 443
 
@@ -410,7 +387,9 @@ func TestChangePort(t *testing.T) {
 		return
 	}
 
-	time.Sleep(2 * time.Second)
+	if err := c.simulate(); !a.Nil(err) {
+		return
+	}
 
 	_, err = c.Kubernetes.CoreV1().ConfigMaps("default").Get("bigip-myservice-80", metav1.GetOptions{})
 	a.NotNil(err)

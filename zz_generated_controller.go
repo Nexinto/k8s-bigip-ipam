@@ -12,63 +12,44 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
+	kubernetesinformers "k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
-	kubernetesinformers "k8s.io/client-go/informers"
-
-
-
-
-
 
 	corev1 "k8s.io/api/core/v1"
 
 	corelisterv1 "k8s.io/client-go/listers/core/v1"
 
-
-
-
 	ipamclientset "github.com/Nexinto/k8s-ipam/pkg/client/clientset/versioned"
 
 	ipamv1 "github.com/Nexinto/k8s-ipam/pkg/apis/ipam.nexinto.com/v1"
-ipaminformers "github.com/Nexinto/k8s-ipam/pkg/client/informers/externalversions"
+	ipaminformers "github.com/Nexinto/k8s-ipam/pkg/client/informers/externalversions"
 	ipamlisterv1 "github.com/Nexinto/k8s-ipam/pkg/client/listers/ipam.nexinto.com/v1"
-
 )
 
 type Controller struct {
-
-	Kubernetes kubernetes.Interface
+	Kubernetes        kubernetes.Interface
 	KubernetesFactory kubernetesinformers.SharedInformerFactory
 
-
-	ServiceQueue workqueue.RateLimitingInterface
+	ServiceQueue  workqueue.RateLimitingInterface
 	ServiceLister corelisterv1.ServiceLister
 	ServiceSynced cache.InformerSynced
 
-	ConfigMapQueue workqueue.RateLimitingInterface
+	ConfigMapQueue  workqueue.RateLimitingInterface
 	ConfigMapLister corelisterv1.ConfigMapLister
 	ConfigMapSynced cache.InformerSynced
 
-
-
-	IpamClient ipamclientset.Interface
+	IpamClient  ipamclientset.Interface
 	IpamFactory ipaminformers.SharedInformerFactory
 
-
-
-	IpAddressQueue workqueue.RateLimitingInterface
+	IpAddressQueue  workqueue.RateLimitingInterface
 	IpAddressLister ipamlisterv1.IpAddressLister
 	IpAddressSynced cache.InformerSynced
 
-
-
-
-Tag             string
-RequireTag      bool
-Partition       string
-
+	Tag        string
+	RequireTag bool
+	Partition  string
 }
 
 // Expects the clientsets to be set.
@@ -78,9 +59,6 @@ func (c *Controller) Initialize() {
 		panic("c.Kubernetes is nil")
 	}
 	c.KubernetesFactory = kubernetesinformers.NewSharedInformerFactory(c.Kubernetes, time.Second*30)
-
-
-
 
 	ServiceInformer := c.KubernetesFactory.Core().V1().Services()
 	ServiceQueue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
@@ -96,13 +74,11 @@ func (c *Controller) Initialize() {
 			}
 		},
 
-
 		UpdateFunc: func(old, new interface{}) {
 			if key, err := cache.MetaNamespaceKeyFunc(new); err == nil {
 				ServiceQueue.Add(key)
 			}
 		},
-
 
 		DeleteFunc: func(obj interface{}) {
 			o, ok := obj.(*corev1.Service)
@@ -126,10 +102,7 @@ func (c *Controller) Initialize() {
 				log.Errorf("failed to process deletion: %s", err.Error())
 			}
 		},
-
 	})
-
-
 
 	ConfigMapInformer := c.KubernetesFactory.Core().V1().ConfigMaps()
 	ConfigMapQueue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
@@ -145,27 +118,17 @@ func (c *Controller) Initialize() {
 			}
 		},
 
-
 		UpdateFunc: func(old, new interface{}) {
 			if key, err := cache.MetaNamespaceKeyFunc(new); err == nil {
 				ConfigMapQueue.Add(key)
 			}
 		},
-
-
 	})
-
-
-
-
 
 	if c.IpamClient == nil {
 		panic("c.IpamClient is nil")
 	}
 	c.IpamFactory = ipaminformers.NewSharedInformerFactory(c.IpamClient, time.Second*30)
-
-
-
 
 	IpAddressInformer := c.IpamFactory.Ipam().V1().IpAddresses()
 	IpAddressQueue := workqueue.NewRateLimitingQueue(workqueue.DefaultControllerRateLimiter())
@@ -175,13 +138,11 @@ func (c *Controller) Initialize() {
 
 	IpAddressInformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 
-
 		UpdateFunc: func(old, new interface{}) {
 			if key, err := cache.MetaNamespaceKeyFunc(new); err == nil {
 				IpAddressQueue.Add(key)
 			}
 		},
-
 
 		DeleteFunc: func(obj interface{}) {
 			o, ok := obj.(*ipamv1.IpAddress)
@@ -205,12 +166,7 @@ func (c *Controller) Initialize() {
 				log.Errorf("failed to process deletion: %s", err.Error())
 			}
 		},
-
 	})
-
-
-
-
 
 	return
 }
@@ -218,8 +174,8 @@ func (c *Controller) Initialize() {
 func (c *Controller) Start() {
 	stopCh := make(chan struct{})
 	defer close(stopCh)
-go c.KubernetesFactory.Start(stopCh)
-go c.IpamFactory.Start(stopCh)
+	go c.KubernetesFactory.Start(stopCh)
+	go c.IpamFactory.Start(stopCh)
 
 	go c.Run(stopCh)
 
@@ -246,20 +202,16 @@ func (c *Controller) Run(stopCh <-chan struct{}) {
 
 	log.Debugf("starting workers")
 
-
 	go wait.Until(c.runServiceWorker, time.Second, stopCh)
 
 	go wait.Until(c.runConfigMapWorker, time.Second, stopCh)
 
 	go wait.Until(c.runIpAddressWorker, time.Second, stopCh)
 
-
 	log.Debugf("started workers")
 	<-stopCh
 	log.Debugf("shutting down workers")
 }
-
-
 
 func (c *Controller) runServiceWorker() {
 	for c.processNextService() {
