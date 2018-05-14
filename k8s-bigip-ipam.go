@@ -34,7 +34,7 @@ const (
 	// This annotation selects one or more SSL profile
 	AnnNxSSLProfiles = "nexinto.com/vip-ssl-profiles"
 
-	// VIP Mode (http or tcp, http is the default)
+	// VIP Mode (http or tcp; the default is tcp)
 	AnnNxVipMode = "nexinto.com/req-vip-mode"
 
 	// bigip provider

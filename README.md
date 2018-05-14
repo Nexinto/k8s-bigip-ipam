@@ -80,6 +80,17 @@ create the virtual server.
 
 You can list those addresses using `kubectl get ipaddresses` and check details with `kubectl describe ipaddress ...`
 
+### HTTP or TCP mode
+
+The loadbalancing mode for your Service can be configured by setting the Annotation `nexinto.com/req-vip-mode` to
+`tcp` or `http`. The default is `tcp`.
+
+### SSL termination
+
+If you would like BigIP to terminate your SSL connections, create an SSL profile on your BigIP and
+set the Annotation `nexinto.com/vip-ssl-profiles` on your Service to the name the SSL profile.
+Use the complete path for the profile, for example `Common/mysite`.
+
 ## Troubleshooting
 
 If your virtual server isn't created, first check the Events for your Service (`kubectl describe service ...`)
