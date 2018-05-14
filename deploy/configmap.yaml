@@ -1,0 +1,11 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k8s-bigip-ipam
+  namespace: kube-system
+data:
+  LOG_LEVEL: debug
+  CONTROLLER_TAG: kubernetes
+  F5_PARTITION: kubernetes
+  REQUIRE_TAG: ""

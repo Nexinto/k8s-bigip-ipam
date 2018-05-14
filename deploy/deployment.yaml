@@ -1,0 +1,43 @@
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: k8s-bigip-ipam
+  labels:
+    app: k8s-bigip-ipam
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k8s-bigip-ipam
+  template:
+    metadata:
+      labels:
+        app: k8s-bigip-ipam
+    spec:
+      serviceAccountName: k8s-bigip-ipam
+      containers:
+      - name: k8s-bigip-ipam
+        image: nexinto/k8s-bigip-ipam:latest
+        env:
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: k8s-bigip-ipam
+              key: LOG_LEVEL
+        - name: CONTROLLER_TAG
+          valueFrom:
+            configMapKeyRef:
+              name: k8s-bigip-ipam
+              key: CONTROLLER_TAG
+        - name: F5_PARTITION
+          valueFrom:
+            configMapKeyRef:
+              name: k8s-bigip-ipam
+              key: F5_PARTITION
+        - name: REQUIRE_TAG
+          valueFrom:
+            configMapKeyRef:
+              name: k8s-bigip-ipam
+              key: REQUIRE_TAG
