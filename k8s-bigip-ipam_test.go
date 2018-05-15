@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	ipamfake "github.com/Nexinto/k8s-ipam/pkg/client/clientset/versioned/fake"
 	"github.com/Nexinto/k8s-lbutil"
 	log "github.com/sirupsen/logrus"
@@ -65,32 +64,6 @@ func testEnvironment() *Controller {
 	return c
 }
 
-// Simulates the behaviour of the ipam controller.
-func (c *Controller) simIPAM() error {
-	i := 1
-
-	addrs, err := c.IpamClient.IpamV1().IpAddresses(metav1.NamespaceAll).List(metav1.ListOptions{})
-	if err != nil {
-		return err
-	}
-
-	for _, addr := range addrs.Items {
-		if addr.Status.Address == "" {
-			addr.Status.Address = fmt.Sprintf("10.0.0.%d", i)
-			i++
-			_, err := c.IpamClient.IpamV1().IpAddresses(addr.Namespace).Update(&addr)
-
-			log.Debugf("[simIPAM] assign: %s/%s -> %s", addr.Namespace, addr.Name, addr.Status.Address)
-
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
 // Simulate what the k8s-BigIP controller would do - add the
 // status.virtual-server.f5.com/ip annotation to the relevant configmaps.
 func (c *Controller) simBigIpCtlr() error {
@@ -117,12 +90,13 @@ func (c *Controller) simBigIpCtlr() error {
 	return nil
 }
 
+// simulate the behaviour of the controllers we depend on
 func (c *Controller) simulate() error {
 
 	// This isn't what it looks like.
 	time.Sleep(2 * time.Second)
 
-	err := c.simIPAM()
+	err := lbutil.SimIPAM(c.IpamClient)
 	if err != nil {
 		return err
 	}
@@ -141,6 +115,7 @@ func (c *Controller) simulate() error {
 	return nil
 }
 
+// Test the standard case (service with 2 ports gets its loadbalancing configuration)
 func TestDefaultLifecycle(t *testing.T) {
 	c := testEnvironment()
 	a := assert.New(t)
